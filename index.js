@@ -86,11 +86,12 @@ module.exports = (api, options) => {
     })
   }
 
-  const cordovaPrepare = () => {
-    // cordova run platform
-    info(`executing "cordova prepare in folder ${srcCordovaPath}`)
+  const cordovaPrepare = (platform) => {
+    // cordova run platform for specific platform
+    info(`executing "cordova prepare ${platform} in folder ${srcCordovaPath}`)
     return spawn.sync('cordova', [
-      'prepare'
+      'prepare',
+      platform
     ], {
       cwd: srcCordovaPath,
       env: process.env,
@@ -98,7 +99,6 @@ module.exports = (api, options) => {
       encoding: 'utf-8'
     })
   }
-
   const cordovaBuild = (platform, release = true) => {
     // cordova run platform
     const cordovaMode = release ? '--release' : '--debug'
@@ -176,10 +176,10 @@ module.exports = (api, options) => {
       const defaultPublicURL = `${protocol}://${address.ip()}:${port}`
       const rawPublicUrl = publicArg || defaultPublicURL
       const publicUrl = rawPublicUrl
-        ? /^[a-zA-Z]+:\/\//.test(rawPublicUrl)
-          ? rawPublicUrl
-          : `${protocol}://${rawPublicUrl}`
-        : null
+          ? /^[a-zA-Z]+:\/\//.test(rawPublicUrl)
+              ? rawPublicUrl
+              : `${protocol}://${rawPublicUrl}`
+          : null
 
       const serveArgs = {
         open,
@@ -232,7 +232,12 @@ module.exports = (api, options) => {
     // add www/.gitignore again (because build will delete it)
     addGitIgnoreToWWW()
     // cordova prepare
-    await cordovaPrepare()
+
+    // We need to explicitly call cordova prepare for each platform
+    // because of an issue with cordova-plugin-fbsdk
+    // See https://github.com/cordova-plugin-facebook-connect/cordova-plugin-facebook-connect/issues/75#issuecomment-914540505
+    await cordovaPrepare('ios')
+    await cordovaPrepare('android')
   }
 
   const runWWWBuild = async (platform, args) => {
@@ -257,28 +262,28 @@ module.exports = (api, options) => {
     api.chainWebpack(webpackConfig => {
       // add cordova.js to index.html
       webpackConfig.plugin('cordova')
-        .use(require('html-webpack-include-assets-plugin'), [{
-          assets: 'cordova.js',
-          append: false,
-          publicPath: options.publicPath !== undefined ? options.publicPath : false
-        }])
+          .use(require('html-webpack-include-assets-plugin'), [{
+            assets: 'cordova.js',
+            append: false,
+            publicPath: false
+          }])
 
       // process.env.CORDOVA_PLATFORM = platform
       if (platform !== null) {
         webpackConfig.plugin('define')
-          .tap(args => {
-            const { 'process.env': env, ...rest } = args[0]
-            return [{
-              'process.env': Object.assign(
-                {},
-                env,
-                {
-                  CORDOVA_PLATFORM: '\'' + platform + '\''
-                }
-              ),
-              ...rest
-            }]
-          })
+            .tap(args => {
+              const { 'process.env': env, ...rest } = args[0]
+              return [{
+                'process.env': Object.assign(
+                    {},
+                    env,
+                    {
+                      CORDOVA_PLATFORM: '\'' + platform + '\''
+                    }
+                ),
+                ...rest
+              }]
+            })
       }
     })
   }
