@@ -2,6 +2,9 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [2.4.2] (2023-09-28)
+- Explicitly call cordova prepare for each platform because of an issue with cordova-plugin-fbsdk See https://github.com/cordova-plugin-facebook-connect/cordova-plugin-facebook-connect/issues/75#issuecomment-914540505
+
 ### [2.4.1](https://github.com/m0dch3n/vue-cli-plugin-cordova/compare/v2.4.0...v2.4.1) (2020-04-01)
 
 ## [2.4.0](https://github.com/m0dch3n/vue-cli-plugin-cordova/compare/v2.3.8...v2.4.0) (2020-01-10)
